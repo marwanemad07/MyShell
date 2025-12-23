@@ -26,7 +26,7 @@ namespace MyShell.Core.Commands
                 return 0;
             }
 
-            var filePath = Helper.CheckFileExecutableExists(args[0]);
+            var filePath = Helper.CheckExecutableFileExists(args[0]);
             if (filePath != null)
             {
                 Console.WriteLine($"{args[0]} is {filePath}");

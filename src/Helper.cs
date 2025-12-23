@@ -5,7 +5,7 @@ namespace MyShell.Core
 {
     public static class Helper
     {
-        public static string? CheckFileExecutableExists(string filename)
+        public static string? CheckExecutableFileExists(string filename)
         {
             var paths = Environment.GetEnvironmentVariable("PATH")!.Split(Path.PathSeparator);
             foreach (var path in paths)

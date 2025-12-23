@@ -15,7 +15,8 @@ namespace MyShell.Core
 
             if (_commands.ContainsKey(command.Name))
                 throw new InvalidOperationException(
-                    $"Command '{command.Name}' is already registered.");
+                    $"Command '{command.Name}' is already registered."
+                );
 
             _commands.Add(command.Name, command);
         }
