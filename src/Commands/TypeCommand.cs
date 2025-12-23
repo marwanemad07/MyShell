@@ -41,7 +41,6 @@ namespace MyShell.Core.Commands
 
         private string? CheckFileExecutableExists(string filename)
         {
-            Console.WriteLine($"Checking if {filename} exists in PATH directories...");
             var paths = Environment.GetEnvironmentVariable("PATH")!.Split(Path.PathSeparator);
             foreach (var path in paths)
             {
@@ -67,7 +66,6 @@ namespace MyShell.Core.Commands
                 if (!Path.HasExtension(path))
                 {
                     string pathext = Environment.GetEnvironmentVariable("PATHEXT") ?? ".EXE";
-                    Console.WriteLine($"Checking PATHEXT expansions for {path} with PATHEXT={pathext}");
                     foreach (var ext in pathext.Split(';', StringSplitOptions.RemoveEmptyEntries))
                     {
                         string candidate = path + ext;
@@ -94,7 +92,6 @@ namespace MyShell.Core.Commands
         {
             string ext = Path.GetExtension(path);
             string pathext = Environment.GetEnvironmentVariable("PATHEXT") ?? "";
-            Console.WriteLine($"Checking if extension {ext} is in PATHEXT {pathext}...");
 
             return pathext
                 .Split(';', StringSplitOptions.RemoveEmptyEntries)
