@@ -1,15 +1,12 @@
-namespace myshell.src.Commands
+namespace MyShell.Core.Commands
 {
-    public class EchoCommand : Command
+    public class EchoCommand : ICommand
     {
         public string Name => "echo";
 
         public int Execute(List<string> args)
         {
-            foreach (var arg in args)
-            {
-                Console.Write(arg + " ");
-            }
+            Console.Write(string.Join(' ', args));
 
             Console.WriteLine();
             return 0;

@@ -1,0 +1,33 @@
+namespace MyShell.Core.Commands
+{
+    public class TypeCommand : ICommand
+    {
+        private readonly CommandRegistry _commandRegistry;
+
+        public TypeCommand(CommandRegistry commandRegistry)
+        {
+            _commandRegistry = commandRegistry;
+        }
+
+        public string Name => "type";
+
+        public int Execute(List<string> args)
+        {
+            if (args == null || args.Count == 0)
+            {
+                Console.WriteLine("Usage: type <filename>");
+                return 1;
+            }
+
+            var command = _commandRegistry.Get(args[0]);
+            if (command == null)
+            {
+                Console.WriteLine($"{args[0]}: not found");
+                return 1;
+            }
+
+            Console.WriteLine($"{command.Name} is a shell built-in");
+            return 0;
+        }
+    }
+}

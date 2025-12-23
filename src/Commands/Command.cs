@@ -1,6 +1,6 @@
-namespace myshell.src.Commands
+namespace MyShell.Core.Commands
 {
-    public interface Command
+    public interface ICommand
     {
         string Name { get; }
         int Execute(List<string> args);
