@@ -12,6 +12,7 @@ namespace MyShell.Core
             _commandRegistry.RegisterCommand(new EchoCommand());
             _commandRegistry.RegisterCommand(new ExitCommand());
             _commandRegistry.RegisterCommand(new TypeCommand(_commandRegistry));
+            _commandRegistry.RegisterCommand(new PwdCommand());
         }
 
         public void Run()
