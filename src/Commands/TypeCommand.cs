@@ -26,7 +26,7 @@ namespace MyShell.Core.Commands
                 return 0;
             }
 
-            var filePath = CheckFileExecutableExists(args[0]);
+            var filePath = Helper.CheckFileExecutableExists(args[0]);
             if (filePath != null)
             {
                 Console.WriteLine($"{args[0]} is {filePath}");
@@ -35,21 +35,6 @@ namespace MyShell.Core.Commands
 
             Console.WriteLine($"{args[0]}: not found");
             return 0;
-        }
-
-        private string? CheckFileExecutableExists(string filename)
-        {
-            var paths = Environment.GetEnvironmentVariable("PATH")!.Split(Path.PathSeparator);
-            foreach (var path in paths)
-            {
-                var fullPath = Path.Combine(path, filename);
-                if (Helper.IsExecutable(fullPath))
-                {
-                    return fullPath;
-                }
-            }
-
-            return null;
         }
     }
 }

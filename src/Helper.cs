@@ -1,10 +1,60 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace MyShell.Core
 {
     public static class Helper
     {
-        public static bool IsExecutable(string path)
+        public static string? CheckFileExecutableExists(string filename)
+        {
+            var paths = Environment.GetEnvironmentVariable("PATH")!.Split(Path.PathSeparator);
+            foreach (var path in paths)
+            {
+                var fullPath = Path.Combine(path, filename);
+                if (IsExecutable(fullPath))
+                {
+                    return fullPath;
+                }
+            }
+
+            return null;
+        }
+
+        public static void ExecuteExternalProgram(string command, string[] args)
+        {
+            try
+            {
+                var process = new Process();
+                process.StartInfo.FileName = command;
+                process.StartInfo.Arguments = string.Join(' ', args);
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.UseShellExecute = false;
+
+                process.OutputDataReceived += (sender, e) =>
+                {
+                    if (e.Data != null)
+                        Console.WriteLine(e.Data);
+                };
+
+                process.ErrorDataReceived += (sender, e) =>
+                {
+                    if (e.Data != null)
+                        Console.Error.WriteLine(e.Data);
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                process.WaitForExit();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error executing command '{command}': {ex.Message}");
+            }
+        }
+
+        private static bool IsExecutable(string path)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {

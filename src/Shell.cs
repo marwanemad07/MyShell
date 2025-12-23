@@ -24,13 +24,19 @@ namespace MyShell.Core
 
                 var (command, args) = Parser.ParseInput(input ?? string.Empty);
 
-                if (string.IsNullOrEmpty(input) || input.ToLower() == "exit")
-                    break;
+                if (string.IsNullOrEmpty(input))
+                    continue;
 
                 var commandInstance = _commandRegistry.Get(command);
 
                 if (commandInstance == null)
                 {
+                    if (Helper.CheckFileExecutableExists(command) != null)
+                    {
+                        Helper.ExecuteExternalProgram(command, args.ToArray());
+                        continue;
+                    }
+
                     Console.WriteLine($"{command}: command not found");
                     continue;
                 }
