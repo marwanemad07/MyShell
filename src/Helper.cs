@@ -20,13 +20,13 @@ namespace MyShell.Core
             return null;
         }
 
-        public static void ExecuteExternalProgram(string command, string[] args)
+        public static void ExecuteExternalProgram(string command, string args)
         {
             try
             {
                 var process = new Process();
                 process.StartInfo.FileName = command;
-                process.StartInfo.Arguments = string.Join(' ', args);
+                process.StartInfo.Arguments = args;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.UseShellExecute = false;
