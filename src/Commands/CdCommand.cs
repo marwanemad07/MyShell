@@ -18,6 +18,10 @@ namespace MyShell.Core.Commands
             {
                 ChangeToAbsolutePath(args[0]);
             }
+            else if (args[0] == "~")
+            {
+                ChangeToHomeDirectory();
+            }
             else
             {
                 var newPath = Path.Combine(Environment.CurrentDirectory, args[0]);
@@ -36,6 +40,19 @@ namespace MyShell.Core.Commands
             else
             {
                 Console.WriteLine($"cd: {path}: No such file or directory");
+            }
+        }
+
+        private void ChangeToHomeDirectory()
+        {
+            var homePath = Environment.GetEnvironmentVariable("HOME");
+            if (homePath != null)
+            {
+                ChangeToAbsolutePath(homePath);
+            }
+            else
+            {
+                Console.WriteLine("cd: HOME environment variable is not set");
             }
         }
     }
