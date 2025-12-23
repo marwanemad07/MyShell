@@ -35,7 +35,7 @@ namespace MyShell.Core
                 {
                     if (Helper.CheckExecutableFileExists(command) != null)
                     {
-                        Helper.ExecuteExternalProgram(command, input[command.Length..]);
+                        Helper.ExecuteExternalProgram(command, args);
                         continue;
                     }
 
