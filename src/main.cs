@@ -1,4 +1,4 @@
-using myshell.src;
+using MyShell.Core;
 
 class Program
 {

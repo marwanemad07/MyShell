@@ -1,10 +1,18 @@
-using myshell.src.Commands;
+using MyShell.Core.Commands;
 
-namespace myshell.src
+namespace MyShell.Core
 {
     public class Shell
     {
-        public Shell() { }
+        private readonly CommandRegistry _commandRegistry;
+
+        public Shell()
+        {
+            _commandRegistry = new CommandRegistry();
+            _commandRegistry.RegisterCommand(new EchoCommand());
+            _commandRegistry.RegisterCommand(new ExitCommand());
+            _commandRegistry.RegisterCommand(new TypeCommand(_commandRegistry));
+        }
 
         public void Run()
         {
@@ -19,15 +27,15 @@ namespace myshell.src
                 if (string.IsNullOrEmpty(input) || input.ToLower() == "exit")
                     break;
 
-                if (command == "echo")
-                {
-                    var echoCommand = new EchoCommand();
+                var commandInstance = _commandRegistry.Get(command);
 
-                    echoCommand.Execute(args);
+                if (commandInstance == null)
+                {
+                    Console.WriteLine($"{command}: command not found");
                     continue;
                 }
 
-                Console.WriteLine($"{command}: command not found");
+                commandInstance.Execute(args);
             }
         }
     }

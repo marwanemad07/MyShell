@@ -1,4 +1,4 @@
-namespace myshell.src
+namespace MyShell.Core
 {
     public static class Parser
     {
