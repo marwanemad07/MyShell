@@ -58,7 +58,6 @@ namespace MyShell.Core
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // Fuck windows
                 if (File.Exists(path))
                     return IsWindowsExecutableExtension(path);
 
