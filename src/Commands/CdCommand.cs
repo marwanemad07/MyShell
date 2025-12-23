@@ -12,16 +12,31 @@ namespace MyShell.Core.Commands
                 return 1;
             }
 
-            if (Directory.Exists(args[0]))
+            bool isRooted = Path.IsPathRooted(args[0]);
+
+            if (isRooted)
             {
-                Directory.SetCurrentDirectory(args[0]);
+                ChangeToAbsolutePath(args[0]);
             }
             else
             {
-                Console.WriteLine($"cd: {args[0]}: No such file or directory");
+                var newPath = Path.Combine(Environment.CurrentDirectory, args[0]);
+                ChangeToAbsolutePath(newPath);
             }
 
             return 0;
+        }
+
+        private void ChangeToAbsolutePath(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.SetCurrentDirectory(path);
+            }
+            else
+            {
+                Console.WriteLine($"cd: {path}: No such file or directory");
+            }
         }
     }
 }
