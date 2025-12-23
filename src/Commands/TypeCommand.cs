@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace MyShell.Core.Commands
 {
     public class TypeCommand : ICommand
@@ -45,57 +43,13 @@ namespace MyShell.Core.Commands
             foreach (var path in paths)
             {
                 var fullPath = Path.Combine(path, filename);
-                if (IsExecutable(fullPath))
+                if (Helper.IsExecutable(fullPath))
                 {
                     return fullPath;
                 }
             }
 
             return null;
-        }
-
-        public bool IsExecutable(string path)
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                // Fuck windows
-                if (File.Exists(path))
-                    return IsWindowsExecutableExtension(path);
-
-                // if no extension, try PATHEXT expansion (bash -> bash.exe)
-                if (!Path.HasExtension(path))
-                {
-                    string pathext = Environment.GetEnvironmentVariable("PATHEXT") ?? ".EXE";
-                    foreach (var ext in pathext.Split(';', StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        string candidate = path + ext;
-                        if (File.Exists(candidate))
-                            return true;
-                    }
-                }
-
-                return false;
-            }
-            else
-            {
-                if (!File.Exists(path))
-                    return false;
-
-                var mode = File.GetUnixFileMode(path);
-                return mode.HasFlag(UnixFileMode.UserExecute)
-                    || mode.HasFlag(UnixFileMode.GroupExecute)
-                    || mode.HasFlag(UnixFileMode.OtherExecute);
-            }
-        }
-
-        private bool IsWindowsExecutableExtension(string path)
-        {
-            string ext = Path.GetExtension(path);
-            string pathext = Environment.GetEnvironmentVariable("PATHEXT") ?? "";
-
-            return pathext
-                .Split(';', StringSplitOptions.RemoveEmptyEntries)
-                .Any(e => e.Equals(ext, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
