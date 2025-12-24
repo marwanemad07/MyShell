@@ -27,22 +27,30 @@ namespace MyShell.Core
             var currentArg = string.Empty;
             var argList = new List<string>();
 
-            foreach (var ch in args)
+            for (int i = 0; i < args.Length; i++)
             {
-                // handle escape character
+                var ch = args[i];
+
                 if (escaped)
                 {
                     currentArg += ch;
                     escaped = false;
                     continue;
                 }
-                else if (ch == '\\')
+
+                // handle double quotes
+                if (ch == '\"')
                 {
-                    escaped = true;
+                    if (inSingleQuotes)
+                    {
+                        currentArg += ch;
+                        continue;
+                    }
+                    inDoubleQuotes = !inDoubleQuotes;
                     continue;
                 }
 
-                // handle single qoutes
+                // handle single quotes
                 if (ch == '\'')
                 {
                     if (inDoubleQuotes)
@@ -54,10 +62,28 @@ namespace MyShell.Core
                     continue;
                 }
 
-                // handle double qoutes
-                if (ch == '\"')
+                if (ch == '\\')
                 {
-                    inDoubleQuotes = !inDoubleQuotes;
+                    if (inSingleQuotes)
+                    {
+                        currentArg += ch;
+                    }
+                    else if (inDoubleQuotes)
+                    {
+                        // In double quotes, only certain characters can be escaped
+                        if (i + 1 < args.Length && (args[i + 1] == '\"' || args[i + 1] == '\\'))
+                        {
+                            escaped = true;
+                        }
+                        else
+                        {
+                            currentArg += ch;
+                        }
+                    }
+                    else
+                    {
+                        escaped = true;
+                    }
                     continue;
                 }
 
