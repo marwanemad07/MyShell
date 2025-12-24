@@ -14,12 +14,12 @@ namespace MyShell.Core
 
             var args = input.Substring(spaceIndex + 1);
 
-            var argsList = HandleQoutes(args);
+            var argsList = HandleQuotes(args);
 
             return (command, argsList);
         }
 
-        private static List<string> HandleQoutes(string args)
+        private static List<string> HandleQuotes(string args)
         {
             var inSingleQuotes = false;
             var inDoubleQuotes = false;
