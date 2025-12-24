@@ -4,22 +4,16 @@ namespace MyShell.Core
     {
         public static (string command, List<string> args) ParseInput(string input)
         {
-            var spaceIndex = input.IndexOf(' ');
-            if (spaceIndex == -1)
-            {
-                return (input, new List<string>());
-            }
 
-            var command = input[..spaceIndex];
+            var processedInput = ProcessInput(input);
 
-            var args = input.Substring(spaceIndex + 1);
-
-            var argsList = HandleQuotes(args);
+            var command = processedInput.Count > 0 ? processedInput[0] : string.Empty;
+            var argsList = processedInput.Count > 1 ? processedInput.Skip(1).ToList() : [];
 
             return (command, argsList);
         }
 
-        private static List<string> HandleQuotes(string args)
+        private static List<string> ProcessInput(string input)
         {
             var inSingleQuotes = false;
             var inDoubleQuotes = false;
@@ -27,9 +21,9 @@ namespace MyShell.Core
             var currentArg = string.Empty;
             var argList = new List<string>();
 
-            for (int i = 0; i < args.Length; i++)
+            for (int i = 0; i < input.Length; i++)
             {
-                var ch = args[i];
+                var ch = input[i];
 
                 if (escaped)
                 {
@@ -71,7 +65,7 @@ namespace MyShell.Core
                     else if (inDoubleQuotes)
                     {
                         // In double quotes, only certain characters can be escaped
-                        if (i + 1 < args.Length && (args[i + 1] == '\"' || args[i + 1] == '\\'))
+                        if (i + 1 < input.Length && (input[i + 1] == '\"' || input[i + 1] == '\\'))
                         {
                             escaped = true;
                         }
