@@ -14,14 +14,15 @@ namespace MyShell.Core
 
             var args = input.Substring(spaceIndex + 1);
 
-            var argsList = HandleSingleQoutes(args);
+            var argsList = HandleQoutes(args);
 
             return (command, argsList);
         }
 
-        private static List<string> HandleSingleQoutes(string args)
+        private static List<string> HandleQoutes(string args)
         {
             var inSingleQuotes = false;
+            var inDoubleQuotes = false;
             var currentArg = string.Empty;
             var argList = new List<string>();
 
@@ -29,11 +30,22 @@ namespace MyShell.Core
             {
                 if (ch == '\'')
                 {
+                    if (inDoubleQuotes)
+                    {
+                        currentArg += ch;
+                        continue;
+                    }
                     inSingleQuotes = !inSingleQuotes;
                     continue;
                 }
 
-                if (ch == ' ' && !inSingleQuotes)
+                if (ch == '\"')
+                {
+                    inDoubleQuotes = !inDoubleQuotes;
+                    continue;
+                }
+
+                if (ch == ' ' && !inSingleQuotes && !inDoubleQuotes)
                 {
                     if (!string.IsNullOrEmpty(currentArg))
                     {
@@ -47,7 +59,7 @@ namespace MyShell.Core
                 }
             }
 
-            if (!inSingleQuotes && !string.IsNullOrEmpty(currentArg))
+            if (!inSingleQuotes && !inDoubleQuotes && !string.IsNullOrEmpty(currentArg))
             {
                 argList.Add(currentArg);
             }
