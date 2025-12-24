@@ -23,11 +23,26 @@ namespace MyShell.Core
         {
             var inSingleQuotes = false;
             var inDoubleQuotes = false;
+            var escaped = false;
             var currentArg = string.Empty;
             var argList = new List<string>();
 
             foreach (var ch in args)
             {
+                // handle escape character
+                if (escaped)
+                {
+                    currentArg += ch;
+                    escaped = false;
+                    continue;
+                }
+                else if (ch == '\\')
+                {
+                    escaped = true;
+                    continue;
+                }
+
+                // handle single qoutes
                 if (ch == '\'')
                 {
                     if (inDoubleQuotes)
@@ -39,12 +54,14 @@ namespace MyShell.Core
                     continue;
                 }
 
+                // handle double qoutes
                 if (ch == '\"')
                 {
                     inDoubleQuotes = !inDoubleQuotes;
                     continue;
                 }
 
+                // handle spaces
                 if (ch == ' ' && !inSingleQuotes && !inDoubleQuotes)
                 {
                     if (!string.IsNullOrEmpty(currentArg))
