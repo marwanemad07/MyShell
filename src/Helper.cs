@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace MyShell.Core
 {
@@ -26,18 +27,36 @@ namespace MyShell.Core
             {
                 var process = new Process();
                 process.StartInfo.FileName = command;
-                foreach (var arg in args)
-                {
-                    process.StartInfo.ArgumentList.Add(arg);
-                }
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.UseShellExecute = false;
 
+                bool outputRedirection = IsOutputRedirection(args);
+
+                if (outputRedirection)
+                {
+                    // remove redirection tokens from args
+                    process.StartInfo.ArgumentList.Add(args[0]);
+                }
+                else
+                {
+                    foreach (var arg in args)
+                    {
+                        process.StartInfo.ArgumentList.Add(arg);
+                    }
+                }
+
+                var outputBuilder = new StringBuilder();
+
                 process.OutputDataReceived += (sender, e) =>
                 {
                     if (e.Data != null)
-                        Console.WriteLine(e.Data);
+                    {
+                        if (outputRedirection)
+                            outputBuilder.AppendLine(e.Data);
+                        else
+                            Console.WriteLine(e.Data);
+                    }
                 };
 
                 process.ErrorDataReceived += (sender, e) =>
@@ -50,11 +69,35 @@ namespace MyShell.Core
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 process.WaitForExit();
+
+                if (outputRedirection)
+                {
+                    HandleOutputRedirection(outputBuilder.ToString().TrimEnd(), args[2]);
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error executing command '{command}': {ex.Message}");
             }
+        }
+
+        public static int HandleOutputRedirection(string output, string filePath)
+        {
+            try
+            {
+                using var writer = new StreamWriter(filePath, false);
+                writer.WriteLine(output);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error writing to file '{filePath}': {ex.Message}");
+            }
+            return 0;
+        }
+
+        public static bool IsOutputRedirection(List<string> args)
+        {
+            return args.Count == 3 && (args[1] == "1>" || args[1] == ">");
         }
 
         private static bool IsExecutable(string path)
