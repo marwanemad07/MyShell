@@ -4,7 +4,6 @@ namespace MyShell.Core
     {
         public static (string command, List<string> args) ParseInput(string input)
         {
-
             var processedInput = ProcessInput(input);
 
             var command = processedInput.Count > 0 ? processedInput[0] : string.Empty;
