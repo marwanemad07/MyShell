@@ -89,12 +89,15 @@ namespace MyShell.Core
             }
         }
 
-        public static void WriteToFile(string output, string filePath)
+        public static void WriteToFile(string? output, string filePath)
         {
             try
             {
                 using var writer = new StreamWriter(filePath, false);
-                writer.WriteLine(output);
+                if (output != null)
+                    writer.WriteLine(output);
+                else
+                    writer.Write("");
             }
             catch (Exception ex)
             {

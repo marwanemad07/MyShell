@@ -14,7 +14,7 @@ namespace MyShell.Core.Commands
 
             if (Helper.IsErrorRedirection(args))
             {
-                Helper.WriteToFile("", args[^1]);
+                Helper.WriteToFile(null, args[^1]);
                 args = args.Take(args.Count - 2).ToList();
             }
 
