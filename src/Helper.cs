@@ -32,8 +32,9 @@ namespace MyShell.Core
                 process.StartInfo.UseShellExecute = false;
 
                 bool outputRedirection = IsOutputRedirection(args);
+                bool errorRedirection = IsErrorRedirection(args);
 
-                if (outputRedirection)
+                if (outputRedirection || errorRedirection)
                 {
                     // remove redirection tokens from args
                     var filteredArgs = args.Take(args.Count - 2).ToList();
@@ -47,6 +48,7 @@ namespace MyShell.Core
                 }
 
                 var outputBuilder = new StringBuilder();
+                var errorBuilder = new StringBuilder();
 
                 process.OutputDataReceived += (sender, e) =>
                 {
@@ -62,7 +64,12 @@ namespace MyShell.Core
                 process.ErrorDataReceived += (sender, e) =>
                 {
                     if (e.Data != null)
-                        Console.Error.WriteLine(e.Data);
+                    {
+                        if (errorRedirection)
+                            errorBuilder.AppendLine(e.Data);
+                        else
+                            Console.Error.WriteLine(e.Data);
+                    }
                 };
 
                 process.Start();
@@ -71,9 +78,10 @@ namespace MyShell.Core
                 process.WaitForExit();
 
                 if (outputRedirection)
-                {
-                    HandleOutputRedirection(outputBuilder.ToString().TrimEnd(), args[^1]);
-                }
+                    WriteToFile(outputBuilder.ToString().TrimEnd(), args[^1]);
+
+                if (errorRedirection)
+                    WriteToFile(errorBuilder.ToString().TrimEnd(), args[^1]);
             }
             catch (Exception ex)
             {
@@ -81,7 +89,7 @@ namespace MyShell.Core
             }
         }
 
-        public static int HandleOutputRedirection(string output, string filePath)
+        public static void WriteToFile(string output, string filePath)
         {
             try
             {
@@ -92,12 +100,16 @@ namespace MyShell.Core
             {
                 Console.WriteLine($"Error writing to file '{filePath}': {ex.Message}");
             }
-            return 0;
         }
 
         public static bool IsOutputRedirection(List<string> args)
         {
-            return args.Contains("1>") || args.Contains(">");
+            return args.Contains("1>") || args.Contains(" >");
+        }
+
+        public static bool IsErrorRedirection(List<string> args)
+        {
+            return args.Contains("2>");
         }
 
         private static bool IsExecutable(string path)

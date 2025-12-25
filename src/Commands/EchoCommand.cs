@@ -8,7 +8,14 @@ namespace MyShell.Core.Commands
         {
             if (Helper.IsOutputRedirection(args))
             {
-                return Helper.HandleOutputRedirection(args[0], args[2]);
+                Helper.WriteToFile(args[0], args[2]);
+                return 0;
+            }
+
+            if (Helper.IsErrorRedirection(args))
+            {
+                Helper.WriteToFile("", args[^1]);
+                args = args.Take(args.Count - 2).ToList();
             }
 
             Console.Write(string.Join(' ', args));
