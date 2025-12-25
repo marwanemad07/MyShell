@@ -36,14 +36,14 @@ namespace MyShell.Core
                 if (outputRedirection)
                 {
                     // remove redirection tokens from args
-                    process.StartInfo.ArgumentList.Add(args[0]);
+                    var filteredArgs = args.Take(args.Count - 2).ToList();
+                    foreach (var arg in filteredArgs)
+                        process.StartInfo.ArgumentList.Add(arg);
                 }
                 else
                 {
                     foreach (var arg in args)
-                    {
                         process.StartInfo.ArgumentList.Add(arg);
-                    }
                 }
 
                 var outputBuilder = new StringBuilder();
@@ -72,7 +72,7 @@ namespace MyShell.Core
 
                 if (outputRedirection)
                 {
-                    HandleOutputRedirection(outputBuilder.ToString().TrimEnd(), args[2]);
+                    HandleOutputRedirection(outputBuilder.ToString().TrimEnd(), args[^1]);
                 }
             }
             catch (Exception ex)
@@ -97,7 +97,7 @@ namespace MyShell.Core
 
         public static bool IsOutputRedirection(List<string> args)
         {
-            return args.Count == 3 && (args[1] == "1>" || args[1] == ">");
+            return args.Contains("1>") || args.Contains(">");
         }
 
         private static bool IsExecutable(string path)
