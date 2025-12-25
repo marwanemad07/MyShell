@@ -34,8 +34,6 @@ namespace MyShell.Core
                 bool outputRedirection = IsOutputRedirection(args);
                 bool errorRedirection = IsErrorRedirection(args);
 
-                Console.WriteLine($"outputRedirection: {outputRedirection}, errorRedirection: {errorRedirection}");
-
                 if (outputRedirection || errorRedirection)
                 {
                     // remove redirection tokens from args
