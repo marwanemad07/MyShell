@@ -33,8 +33,9 @@ namespace MyShell.Core
 
                 bool outputRedirection = IsOutputRedirection(args);
                 bool errorRedirection = IsErrorRedirection(args);
+                bool appendOutputRedirection = IsAppednOutputRedirection(args);
 
-                if (outputRedirection || errorRedirection)
+                if (outputRedirection || errorRedirection || appendOutputRedirection)
                 {
                     // remove redirection tokens from args
                     var filteredArgs = args.Take(args.Count - 2).ToList();
@@ -55,6 +56,8 @@ namespace MyShell.Core
                     if (e.Data != null)
                     {
                         if (outputRedirection)
+                            outputBuilder.AppendLine(e.Data);
+                        else if (appendOutputRedirection)
                             outputBuilder.AppendLine(e.Data);
                         else
                             Console.WriteLine(e.Data);
@@ -80,6 +83,9 @@ namespace MyShell.Core
                 if (outputRedirection)
                     WriteToFile(outputBuilder.ToString().TrimEnd(), args[^1]);
 
+                if (appendOutputRedirection)
+                    WriteToFile(outputBuilder.ToString().TrimEnd(), args[^1], append: true);
+
                 if (errorRedirection)
                     WriteToFile(errorBuilder.ToString().TrimEnd(), args[^1]);
             }
@@ -89,11 +95,11 @@ namespace MyShell.Core
             }
         }
 
-        public static void WriteToFile(string? output, string filePath)
+        public static void WriteToFile(string? output, string filePath, bool append = false)
         {
             try
             {
-                using var writer = new StreamWriter(filePath, false);
+                using var writer = new StreamWriter(filePath, append);
                 if (output != null)
                     writer.WriteLine(output);
                 else
@@ -113,6 +119,11 @@ namespace MyShell.Core
         public static bool IsErrorRedirection(List<string> args)
         {
             return args.Contains("2>");
+        }
+
+        public static bool IsAppednOutputRedirection(List<string> args)
+        {
+            return args.Contains("1>>") || args.Contains(">>");
         }
 
         private static bool IsExecutable(string path)
