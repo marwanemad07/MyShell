@@ -34,6 +34,8 @@ namespace MyShell.Core
                 bool outputRedirection = IsOutputRedirection(args);
                 bool errorRedirection = IsErrorRedirection(args);
 
+                Console.WriteLine($"outputRedirection: {outputRedirection}, errorRedirection: {errorRedirection}");
+
                 if (outputRedirection || errorRedirection)
                 {
                     // remove redirection tokens from args
@@ -107,7 +109,7 @@ namespace MyShell.Core
 
         public static bool IsOutputRedirection(List<string> args)
         {
-            return args.Contains("1>") || args.Contains(" >");
+            return args.Contains("1>") || args.Contains(">");
         }
 
         public static bool IsErrorRedirection(List<string> args)
