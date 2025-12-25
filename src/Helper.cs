@@ -34,8 +34,14 @@ namespace MyShell.Core
                 bool outputRedirection = IsOutputRedirection(args);
                 bool errorRedirection = IsErrorRedirection(args);
                 bool appendOutputRedirection = IsAppednOutputRedirection(args);
+                bool appendErrorRedirection = IsAppendErrorRedirection(args);
 
-                if (outputRedirection || errorRedirection || appendOutputRedirection)
+                if (
+                    outputRedirection
+                    || errorRedirection
+                    || appendOutputRedirection
+                    || appendErrorRedirection
+                )
                 {
                     // remove redirection tokens from args
                     var filteredArgs = args.Take(args.Count - 2).ToList();
@@ -70,6 +76,8 @@ namespace MyShell.Core
                     {
                         if (errorRedirection)
                             errorBuilder.AppendLine(e.Data);
+                        else if (appendErrorRedirection)
+                            errorBuilder.AppendLine(e.Data);
                         else
                             Console.Error.WriteLine(e.Data);
                     }
@@ -88,6 +96,9 @@ namespace MyShell.Core
 
                 if (errorRedirection)
                     WriteToFile(errorBuilder.ToString().TrimEnd(), args[^1]);
+
+                if (appendErrorRedirection)
+                    WriteToFile(errorBuilder.ToString().TrimEnd(), args[^1], append: true);
             }
             catch (Exception ex)
             {
@@ -124,6 +135,11 @@ namespace MyShell.Core
         public static bool IsAppednOutputRedirection(List<string> args)
         {
             return args.Contains("1>>") || args.Contains(">>");
+        }
+
+        public static bool IsAppendErrorRedirection(List<string> args)
+        {
+            return args.Contains("2>>");
         }
 
         private static bool IsExecutable(string path)

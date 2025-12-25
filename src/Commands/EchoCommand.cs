@@ -1,3 +1,5 @@
+using System.Threading.Tasks.Dataflow;
+
 namespace MyShell.Core.Commands
 {
     public class EchoCommand : ICommand
@@ -9,6 +11,7 @@ namespace MyShell.Core.Commands
             bool outputRedirection = Helper.IsOutputRedirection(args);
             bool errorRedirection = Helper.IsErrorRedirection(args);
             bool appendOutputRedirection = Helper.IsAppednOutputRedirection(args);
+            bool appendErrorRedirection = Helper.IsAppendErrorRedirection(args);
 
             if (outputRedirection)
             {
@@ -24,6 +27,11 @@ namespace MyShell.Core.Commands
             if (errorRedirection)
             {
                 Helper.WriteToFile(null, args[^1]);
+                args = args.Take(args.Count - 2).ToList();
+            }
+            else if (appendErrorRedirection)
+            {
+                Helper.WriteToFile(null, args[^1], append: true);
                 args = args.Take(args.Count - 2).ToList();
             }
 
