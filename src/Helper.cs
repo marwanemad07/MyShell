@@ -36,8 +36,6 @@ namespace MyShell.Core
                 bool appendOutputRedirection = IsAppednOutputRedirection(args);
                 bool appendErrorRedirection = IsAppendErrorRedirection(args);
 
-                Console.WriteLine($"outputRedirection: {outputRedirection}, errorRedirection: {errorRedirection}, appendOutputRedirection: {appendOutputRedirection}, appendErrorRedirection: {appendErrorRedirection}");
-
                 if (
                     outputRedirection
                     || errorRedirection
@@ -110,7 +108,6 @@ namespace MyShell.Core
 
         public static void WriteToFile(string? output, string filePath, bool append = false)
         {
-            Console.WriteLine($"Writing to file: {filePath}, output: {output}, Append: {append}");
             try
             {
                 using var writer = new StreamWriter(filePath, append);
