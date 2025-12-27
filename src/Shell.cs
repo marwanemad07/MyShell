@@ -108,7 +108,7 @@ namespace MyShell.Core
                             else
                             {
                                 // second tab, show all completions
-                                Console.WriteLine($"\n {string.Join(", ", completions)}");
+                                Console.WriteLine($"\n {string.Join("  ", completions)}");
 
                                 Console.Write("\r$ " + input.ToString());
                             }
