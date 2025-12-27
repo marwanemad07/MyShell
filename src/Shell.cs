@@ -55,7 +55,6 @@ namespace MyShell.Core
             while (true)
             {
                 var key = Console.ReadKey(intercept: true);
-                Console.WriteLine(key);
 
                 if (key.Key == ConsoleKey.Enter)
                 {
