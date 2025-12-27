@@ -97,12 +97,14 @@ namespace MyShell.Core
                         else
                         {
                             // trying to solve a bug where no completions are found
+                            Console.WriteLine($"belling for no completions");
                             Console.Write("\a");
                         }
                     }
                     else
                     {
                         // no completion found, do a bell sound
+                        Console.WriteLine($"belling for no completions");
                         Console.Write("\a");
                     }
                 }
