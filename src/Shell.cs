@@ -94,6 +94,11 @@ namespace MyShell.Core
 
                             Console.Write("\r$ " + input.ToString());
                         }
+                        else
+                        {
+                            // trying to solve a bug where no completions are found
+                            Console.Write("\a");
+                        }
                     }
                     else
                     {
