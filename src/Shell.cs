@@ -91,7 +91,7 @@ namespace MyShell.Core
                         else
                         {
                             Console.WriteLine();
-                            Console.WriteLine(string.Join("    ", completions));
+                            Console.WriteLine(string.Join("  ", completions));
                             Console.Write("$ " + input.ToString());
                         }
                     }
