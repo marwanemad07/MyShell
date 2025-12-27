@@ -51,6 +51,7 @@ namespace MyShell.Core
         {
             var input = new System.Text.StringBuilder();
             int cursorPosition = 0;
+            bool isFirstTab = true;
 
             while (true)
             {
@@ -64,20 +65,35 @@ namespace MyShell.Core
                 else if (key.Key == ConsoleKey.Tab)
                 {
                     var currentInput = input.ToString();
-                    var completion = TryAutocomplete(currentInput);
+                    var completions = TryAutocomplete(currentInput);
 
-                    if (completion != null)
+                    if (completions != null)
                     {
-                        // clear current line
-                        Console.Write("\r$ " + new string(' ', input.Length));
+                        if (completions.Count == 1)
+                        {
+                            // clear current line
+                            Console.Write("\r$ " + new string(' ', input.Length));
 
-                        // write the completed command
-                        input.Clear();
-                        input.Append(completion);
-                        input.Append(' ');
-                        cursorPosition = input.Length;
+                            // write the completed command
+                            input.Clear();
+                            input.Append(completions[0]);
+                            input.Append(' ');
+                            cursorPosition = input.Length;
 
-                        Console.Write("\r$ " + input.ToString());
+                            Console.Write("\r$ " + input.ToString());
+                        }
+                        else if (completions.Count > 1 && isFirstTab)
+                        {
+                            Console.Write("\a");
+                            isFirstTab = false;
+                            continue;
+                        }
+                        else
+                        {
+                            Console.WriteLine();
+                            Console.WriteLine(string.Join("    ", completions));
+                            Console.Write("$ " + input.ToString());
+                        }
                     }
                     else
                     {
@@ -125,10 +141,12 @@ namespace MyShell.Core
                         }
                     }
                 }
+
+                isFirstTab = true;
             }
         }
 
-        private string? TryAutocomplete(string input)
+        private List<string>? TryAutocomplete(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
                 return null;
@@ -150,15 +168,10 @@ namespace MyShell.Core
             var allMatches = builtinMatches
                 .Concat(executableMatches)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            // autocomplete with the first match
-            if (allMatches.Count > 0)
-            {
-                return allMatches[0];
-            }
-
-            return null;
+            return allMatches.Count > 0 ? allMatches : null;
         }
     }
 }
