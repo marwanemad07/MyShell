@@ -3,10 +3,12 @@ namespace MyShell.Core.Commands
     public class TypeCommand : ICommand
     {
         private readonly CommandRegistry _commandRegistry;
+        private readonly ExecutableFinder _executableFinder;
 
         public TypeCommand(CommandRegistry commandRegistry)
         {
             _commandRegistry = commandRegistry;
+            _executableFinder = new ExecutableFinder();
         }
 
         public string Name => "type";
@@ -26,7 +28,7 @@ namespace MyShell.Core.Commands
                 return 0;
             }
 
-            var filePath = Helper.CheckExecutableFileExists(args[0]);
+            var filePath = _executableFinder.FindExecutable(args[0]);
             if (filePath != null)
             {
                 Console.WriteLine($"{args[0]} is {filePath}");

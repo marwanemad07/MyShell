@@ -1,3 +1,4 @@
+using System.Text;
 using MyShell.Core.Commands;
 
 namespace MyShell.Core
@@ -5,10 +6,14 @@ namespace MyShell.Core
     public class Shell
     {
         private readonly CommandRegistry _commandRegistry;
+        private readonly ExecutableFinder _executableFinder;
+        private readonly ProcessExecutor _processExecutor;
 
         public Shell()
         {
             _commandRegistry = new CommandRegistry();
+            _executableFinder = new ExecutableFinder();
+            _processExecutor = new ProcessExecutor();
             RegisterBuiltinCommands();
         }
 
@@ -40,9 +45,9 @@ namespace MyShell.Core
 
             if (commandInstance == null)
             {
-                if (Helper.CheckExecutableFileExists(command) != null)
+                if (_executableFinder.FindExecutable(command) != null)
                 {
-                    Helper.ExecuteExternalProgram(command, args);
+                    _processExecutor.Execute(command, args);
                     return;
                 }
                 Console.WriteLine($"{command}: command not found");
@@ -51,6 +56,8 @@ namespace MyShell.Core
             commandInstance.Execute(args);
         }
 
+        // TODO: This method can be moved to Helper class
+        // TODO: We will use trie data structure for better performance
         private string? ReadLineWithAutocompletion()
         {
             var currentLineBuffer = new System.Text.StringBuilder();
@@ -100,7 +107,7 @@ namespace MyShell.Core
                 }
                 else if (completions.Count > 1)
                 {
-                    var lcp = Helper.GetLongestCommonPrefix(completions);
+                    var lcp = StringUtilities.GetLongestCommonPrefix(completions);
                     if (lcp.Length > currentInput.Length)
                     {
                         RedrawLine(buffer, lcp, ref cursorPosition);
@@ -173,7 +180,7 @@ namespace MyShell.Core
                 .Where(cmd => cmd.StartsWith(input, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            var executableMatches = Helper.GetExecutablesStartingWith(input);
+            var executableMatches = _executableFinder.GetExecutablesStartingWith(input);
 
             var allMatches = builtinMatches
                 .Concat(executableMatches)

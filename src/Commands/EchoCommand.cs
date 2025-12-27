@@ -1,3 +1,4 @@
+using System.Diagnostics.Contracts;
 using System.Threading.Tasks.Dataflow;
 
 namespace MyShell.Core.Commands
@@ -8,30 +9,27 @@ namespace MyShell.Core.Commands
 
         public int Execute(List<string> args)
         {
-            bool outputRedirection = Helper.IsOutputRedirection(args);
-            bool errorRedirection = Helper.IsErrorRedirection(args);
-            bool appendOutputRedirection = Helper.IsAppednOutputRedirection(args);
-            bool appendErrorRedirection = Helper.IsAppendErrorRedirection(args);
+            var redirectionOptions = RedirectionOptions.Parse(args);
 
-            if (outputRedirection)
+            if (redirectionOptions.HasOutputRedirection)
             {
-                Helper.WriteToFile(args[0], args[2]);
+                FileWriter.Write(args[0], redirectionOptions.TargetFile!);
                 return 0;
             }
-            else if (appendOutputRedirection)
+            else if (redirectionOptions.AppendOutput)
             {
-                Helper.WriteToFile(args[0], args[2], append: true);
+                FileWriter.Write(args[0], redirectionOptions.TargetFile!, append: true);
                 return 0;
             }
 
-            if (errorRedirection)
+            if (redirectionOptions.HasErrorRedirection)
             {
-                Helper.WriteToFile(null, args[^1]);
+                FileWriter.Write(null, args[^1]);
                 args = args.Take(args.Count - 2).ToList();
             }
-            else if (appendErrorRedirection)
+            else if (redirectionOptions.AppendError)
             {
-                Helper.WriteToFile(null, args[^1], append: true);
+                FileWriter.Write(null, args[^1], append: true);
                 args = args.Take(args.Count - 2).ToList();
             }
 
