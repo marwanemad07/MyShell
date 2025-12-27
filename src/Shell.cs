@@ -9,11 +9,7 @@ namespace MyShell.Core
         public Shell()
         {
             _commandRegistry = new CommandRegistry();
-            _commandRegistry.RegisterCommand(new EchoCommand());
-            _commandRegistry.RegisterCommand(new ExitCommand());
-            _commandRegistry.RegisterCommand(new TypeCommand(_commandRegistry));
-            _commandRegistry.RegisterCommand(new PwdCommand());
-            _commandRegistry.RegisterCommand(new CdCommand());
+            RegisterBuiltinCommands();
         }
 
         public void Run()
@@ -21,149 +17,147 @@ namespace MyShell.Core
             while (true)
             {
                 Console.Write("$ ");
-
                 var input = ReadLineWithAutocompletion();
-
-                var (command, args) = Parser.ParseInput(input ?? string.Empty);
-
                 if (string.IsNullOrEmpty(input))
                     continue;
-
-                var commandInstance = _commandRegistry.Get(command);
-
-                if (commandInstance == null)
-                {
-                    if (Helper.CheckExecutableFileExists(command) != null)
-                    {
-                        Helper.ExecuteExternalProgram(command, args);
-                        continue;
-                    }
-
-                    Console.WriteLine($"{command}: command not found");
-                    continue;
-                }
-
-                commandInstance.Execute(args);
+                ExecuteInput(input);
             }
         }
 
-        // TODO: need to use a trie
+        private void RegisterBuiltinCommands()
+        {
+            _commandRegistry.RegisterCommand(new EchoCommand());
+            _commandRegistry.RegisterCommand(new ExitCommand());
+            _commandRegistry.RegisterCommand(new TypeCommand(_commandRegistry));
+            _commandRegistry.RegisterCommand(new PwdCommand());
+            _commandRegistry.RegisterCommand(new CdCommand());
+        }
+
+        private void ExecuteInput(string input)
+        {
+            var (command, args) = Parser.ParseInput(input);
+            var commandInstance = _commandRegistry.Get(command);
+
+            if (commandInstance == null)
+            {
+                if (Helper.CheckExecutableFileExists(command) != null)
+                {
+                    Helper.ExecuteExternalProgram(command, args);
+                    return;
+                }
+                Console.WriteLine($"{command}: command not found");
+                return;
+            }
+            commandInstance.Execute(args);
+        }
+
         private string? ReadLineWithAutocompletion()
         {
-            var input = new System.Text.StringBuilder();
+            var currentLineBuffer = new System.Text.StringBuilder();
             int cursorPosition = 0;
-            bool isFirstTab = true;
+            bool tabPressedOnce = true;
 
             while (true)
             {
                 var key = Console.ReadKey(intercept: true);
-
                 if (key.Key == ConsoleKey.Enter)
                 {
                     Console.WriteLine();
-                    return input.ToString();
+                    return currentLineBuffer.ToString();
                 }
                 else if (key.Key == ConsoleKey.Tab)
                 {
-                    var currentInput = input.ToString();
-                    var completions = TryAutocomplete(currentInput);
-
-                    if (completions != null)
-                    {
-                        if (completions.Count == 1)
-                        {
-                            // clear current line
-                            Console.Write("\r$ " + new string(' ', input.Length));
-
-                            // write the completed command
-                            input.Clear();
-                            input.Append(completions[0]);
-                            input.Append(' ');
-                            cursorPosition = input.Length;
-
-                            Console.Write("\r$ " + input.ToString());
-                        }
-                        else if (completions.Count > 1)
-                        {
-                            var lcp = Helper.GetLongestCommonPrefix(completions);
-
-                            if (lcp.Length > currentInput.Length)
-                            {
-                                // clear current line
-                                Console.Write("\r$ " + new string(' ', input.Length));
-
-                                // write the longest common prefix
-                                input.Clear();
-                                input.Append(lcp);
-                                cursorPosition = input.Length;
-
-                                Console.Write("\r$ " + input.ToString());
-                            }
-                            else if (isFirstTab)
-                            {
-                                // first tab, and no change in completion, do a bell sound
-                                isFirstTab = false;
-                                Console.Write("\a");
-                                continue;
-                            }
-                            else
-                            {
-                                // second tab, show all completions
-                                Console.WriteLine($"\n{string.Join("  ", completions)}");
-
-                                Console.Write("\r$ " + input.ToString());
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // no completion found, do a bell sound
-                        Console.Write("\a");
-                    }
+                    HandleTabKey(currentLineBuffer, ref cursorPosition, ref tabPressedOnce);
                 }
                 else if (key.Key == ConsoleKey.Backspace)
                 {
-                    if (cursorPosition > 0)
-                    {
-                        input.Remove(cursorPosition - 1, 1);
-                        cursorPosition--;
-
-                        // redraw the line
-                        Console.Write("\r$ " + input.ToString() + " ");
-                        Console.Write("\r$ " + input.ToString());
-
-                        // position cursor correctly
-                        if (cursorPosition < input.Length)
-                        {
-                            Console.Write("\r$ ");
-                            for (int i = 0; i < cursorPosition; i++)
-                            {
-                                Console.Write(input[i]);
-                            }
-                        }
-                    }
+                    HandleBackspaceKey(currentLineBuffer, ref cursorPosition);
+                    tabPressedOnce = true;
                 }
                 else
                 {
-                    input.Insert(cursorPosition, key.KeyChar);
-                    cursorPosition++;
+                    HandleCharacterInput(currentLineBuffer, ref cursorPosition, key.KeyChar);
+                    tabPressedOnce = true;
+                }
+            }
+        }
 
-                    // redraw the line
-                    Console.Write("\r$ " + input.ToString());
+        private void HandleTabKey(
+            StringBuilder buffer,
+            ref int cursorPosition,
+            ref bool tabPressedOnce
+        )
+        {
+            var currentInput = buffer.ToString();
+            var completions = TryAutocomplete(currentInput);
 
-                    // position cursor correctly
-                    if (cursorPosition < input.Length)
+            if (completions != null)
+            {
+                if (completions.Count == 1)
+                {
+                    RedrawLine(buffer, completions[0] + " ", ref cursorPosition);
+                    tabPressedOnce = true;
+                }
+                else if (completions.Count > 1)
+                {
+                    var lcp = Helper.GetLongestCommonPrefix(completions);
+                    if (lcp.Length > currentInput.Length)
                     {
-                        Console.Write("\r$ ");
-                        for (int i = 0; i < cursorPosition; i++)
-                        {
-                            Console.Write(input[i]);
-                        }
+                        RedrawLine(buffer, lcp, ref cursorPosition);
+                        tabPressedOnce = true;
+                    }
+                    else if (tabPressedOnce)
+                    {
+                        tabPressedOnce = false;
+                        Console.Write("\a");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"\n{string.Join("  ", completions)}");
+                        Console.Write("\r$ " + buffer.ToString());
+                        tabPressedOnce = true;
                     }
                 }
-
-                isFirstTab = true;
             }
+            else
+            {
+                Console.Write("\a");
+                tabPressedOnce = true;
+            }
+        }
+
+        private void HandleBackspaceKey(System.Text.StringBuilder buffer, ref int cursorPosition)
+        {
+            if (cursorPosition > 0)
+            {
+                buffer.Remove(cursorPosition - 1, 1);
+                cursorPosition--;
+                RedrawLine(buffer, buffer.ToString(), ref cursorPosition);
+            }
+        }
+
+        private void HandleCharacterInput(
+            System.Text.StringBuilder buffer,
+            ref int cursorPosition,
+            char keyChar
+        )
+        {
+            buffer.Insert(cursorPosition, keyChar);
+            cursorPosition++;
+            RedrawLine(buffer, buffer.ToString(), ref cursorPosition);
+        }
+
+        private void RedrawLine(
+            System.Text.StringBuilder buffer,
+            string newContent,
+            ref int cursorPosition
+        )
+        {
+            Console.Write("\r$ " + new string(' ', buffer.Length));
+            buffer.Clear();
+            buffer.Append(newContent);
+            cursorPosition = buffer.Length;
+            Console.Write("\r$ " + buffer.ToString());
         }
 
         private List<string>? TryAutocomplete(string input)
@@ -171,20 +165,16 @@ namespace MyShell.Core
             if (string.IsNullOrWhiteSpace(input))
                 return null;
 
-            // autocomplete if there are no spaces (we're still on the first word)
             if (input.Contains(' '))
                 return null;
 
-            // builtin commands that match
             var builtinMatches = _commandRegistry
                 .GetBuiltinCommands()
                 .Where(cmd => cmd.StartsWith(input, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            // external executables that match
             var executableMatches = Helper.GetExecutablesStartingWith(input);
 
-            // Combine all matches
             var allMatches = builtinMatches
                 .Concat(executableMatches)
                 .Distinct(StringComparer.OrdinalIgnoreCase)

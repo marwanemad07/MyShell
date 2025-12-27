@@ -43,7 +43,10 @@ namespace MyShell.Core
                     foreach (var file in files)
                     {
                         var fileName = Path.GetFileName(file);
-                        if (fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && IsExecutable(file))
+                        if (
+                            fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                            && IsExecutable(file)
+                        )
                         {
                             executables.Add(fileName);
                         }
