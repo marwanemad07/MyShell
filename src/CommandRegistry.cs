@@ -26,5 +26,10 @@ namespace MyShell.Core
             _commands.TryGetValue(name, out var command);
             return command;
         }
+
+        public IEnumerable<string> GetBuiltinCommands()
+        {
+            return _commands.Keys;
+        }
     }
 }
