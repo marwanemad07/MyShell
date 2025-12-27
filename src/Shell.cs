@@ -51,7 +51,6 @@ namespace MyShell.Core
         {
             var input = new System.Text.StringBuilder();
             int cursorPosition = 0;
-            bool isFirstTab = true;
 
             while (true)
             {
@@ -82,17 +81,18 @@ namespace MyShell.Core
 
                             Console.Write("\r$ " + input.ToString());
                         }
-                        else if (completions.Count > 1 && isFirstTab)
+                        else if (completions.Count > 1)
                         {
-                            Console.Write("\a");
-                            isFirstTab = false;
-                            continue;
-                        }
-                        else
-                        {
-                            Console.WriteLine();
-                            Console.WriteLine(string.Join("  ", completions));
-                            Console.Write("$ " + input.ToString());
+                            var lcp = Helper.GetLongestCommonPrefix(completions);
+                            // clear current line
+                            Console.Write("\r$ " + new string(' ', input.Length));
+
+                            // write the longest common prefix
+                            input.Clear();
+                            input.Append(lcp);
+                            cursorPosition = input.Length;
+
+                            Console.Write("\r$ " + input.ToString());
                         }
                     }
                     else
@@ -141,8 +141,6 @@ namespace MyShell.Core
                         }
                     }
                 }
-
-                isFirstTab = true;
             }
         }
 

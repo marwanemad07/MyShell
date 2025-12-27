@@ -25,12 +25,12 @@ namespace MyShell.Core
         {
             var executables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var pathEnv = Environment.GetEnvironmentVariable("PATH");
-            
+
             if (string.IsNullOrEmpty(pathEnv))
                 return new List<string>();
 
             var paths = pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
-            
+
             foreach (var path in paths)
             {
                 // Skip directories that don't exist
@@ -178,6 +178,22 @@ namespace MyShell.Core
         public static bool IsAppendErrorRedirection(List<string> args)
         {
             return args.Contains("2>>");
+        }
+
+        public static string GetLongestCommonPrefix(List<string> strings)
+        {
+            strings.Order();
+            var first = strings.First();
+            var last = strings.Last();
+
+            int i = 0;
+
+            while (i < first.Length && i < last.Length && first[i] == last[i])
+            {
+                i++;
+            }
+
+            return first.Substring(0, i);
         }
 
         private static bool IsExecutable(string path)
