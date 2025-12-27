@@ -21,6 +21,44 @@ namespace MyShell.Core
             return null;
         }
 
+        public static List<string> GetExecutablesStartingWith(string prefix)
+        {
+            var executables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var pathEnv = Environment.GetEnvironmentVariable("PATH");
+            
+            if (string.IsNullOrEmpty(pathEnv))
+                return new List<string>();
+
+            var paths = pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var path in paths)
+            {
+                // Skip directories that don't exist
+                if (!Directory.Exists(path))
+                    continue;
+
+                try
+                {
+                    var files = Directory.GetFiles(path);
+                    foreach (var file in files)
+                    {
+                        var fileName = Path.GetFileName(file);
+                        if (fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && IsExecutable(file))
+                        {
+                            executables.Add(fileName);
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore directories we can't access
+                    continue;
+                }
+            }
+
+            return executables.ToList();
+        }
+
         public static void ExecuteExternalProgram(string command, List<string> args)
         {
             try

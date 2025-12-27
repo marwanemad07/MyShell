@@ -133,19 +133,29 @@ namespace MyShell.Core
             if (string.IsNullOrWhiteSpace(input))
                 return null;
 
-            // autocomplete if there are no spaces (i.e., we're still on the first word)
+            // autocomplete if there are no spaces (we're still on the first word)
             if (input.Contains(' '))
                 return null;
 
-            var matches = _commandRegistry
+            // builtin commands that match
+            var builtinMatches = _commandRegistry
                 .GetBuiltinCommands()
                 .Where(cmd => cmd.StartsWith(input, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            // only autocomplete if there's exactly one match
-            if (matches.Count == 1)
+            // external executables that match
+            var executableMatches = Helper.GetExecutablesStartingWith(input);
+
+            // Combine all matches
+            var allMatches = builtinMatches
+                .Concat(executableMatches)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            // autocomplete with the first match
+            if (allMatches.Count > 0)
             {
-                return matches[0];
+                return allMatches[0];
             }
 
             return null;
