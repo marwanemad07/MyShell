@@ -51,6 +51,7 @@ namespace MyShell.Core
         {
             var input = new System.Text.StringBuilder();
             int cursorPosition = 0;
+            bool isFirstTab = true;
 
             while (true)
             {
@@ -68,7 +69,6 @@ namespace MyShell.Core
 
                     if (completions != null)
                     {
-                        Console.WriteLine($"\nCompletions: {string.Join(", ", completions)}");
                         if (completions.Count == 1)
                         {
                             // clear current line
@@ -85,27 +85,38 @@ namespace MyShell.Core
                         else if (completions.Count > 1)
                         {
                             var lcp = Helper.GetLongestCommonPrefix(completions);
-                            // clear current line
-                            Console.Write("\r$ " + new string(' ', input.Length));
 
-                            // write the longest common prefix
-                            input.Clear();
-                            input.Append(lcp);
-                            cursorPosition = input.Length;
+                            if (lcp.Length > currentInput.Length)
+                            {
+                                // clear current line
+                                Console.Write("\r$ " + new string(' ', input.Length));
 
-                            Console.Write("\r$ " + input.ToString());
-                        }
-                        else
-                        {
-                            // trying to solve a bug where no completions are found
-                            Console.WriteLine($"belling for no completions");
-                            Console.Write("\a");
+                                // write the longest common prefix
+                                input.Clear();
+                                input.Append(lcp);
+                                cursorPosition = input.Length;
+
+                                Console.Write("\r$ " + input.ToString());
+                            }
+                            else if (isFirstTab)
+                            {
+                                // first tab, and no change in completion, do a bell sound
+                                isFirstTab = false;
+                                Console.Write("\a");
+                                continue;
+                            }
+                            else
+                            {
+                                // second tab, show all completions
+                                Console.WriteLine($"\n {string.Join(", ", completions)}");
+
+                                Console.Write("\r$ " + input.ToString());
+                            }
                         }
                     }
                     else
                     {
                         // no completion found, do a bell sound
-                        Console.WriteLine($"belling for no completions");
                         Console.Write("\a");
                     }
                 }
@@ -149,6 +160,8 @@ namespace MyShell.Core
                         }
                     }
                 }
+
+                isFirstTab = true;
             }
         }
 
