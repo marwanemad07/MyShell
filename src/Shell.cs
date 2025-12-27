@@ -79,6 +79,11 @@ namespace MyShell.Core
 
                         Console.Write("\r$ " + input.ToString());
                     }
+                    else
+                    {
+                        // no completion found, do a bell sound
+                        Console.Write("\a");
+                    }
                 }
                 else if (key.Key == ConsoleKey.Backspace)
                 {
