@@ -68,6 +68,7 @@ namespace MyShell.Core
 
                     if (completions != null)
                     {
+                        Console.WriteLine($"\nCompletions: {string.Join(", ", completions)}");
                         if (completions.Count == 1)
                         {
                             // clear current line
