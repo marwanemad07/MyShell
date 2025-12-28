@@ -22,7 +22,7 @@ namespace MyShell.Core
             while (true)
             {
                 Console.Write("$ ");
-                var input = Console.ReadLine(); //ReadLineWithAutocompletion();
+                var input = ReadLineWithAutocompletion();
                 if (string.IsNullOrEmpty(input))
                     continue;
                 ExecuteInput(input);
