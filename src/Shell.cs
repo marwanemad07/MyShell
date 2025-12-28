@@ -36,6 +36,7 @@ namespace MyShell.Core
             _commandRegistry.RegisterCommand(new TypeCommand(_commandRegistry));
             _commandRegistry.RegisterCommand(new PwdCommand());
             _commandRegistry.RegisterCommand(new CdCommand());
+            _commandRegistry.RegisterCommand(new HistoryCommand());
         }
 
         private void ExecuteInput(string input)
