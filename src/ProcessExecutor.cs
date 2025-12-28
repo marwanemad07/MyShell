@@ -63,30 +63,57 @@ namespace MyShell.Core
         {
             try
             {
-                string? inputForNext = null;
+                var segments = new List<List<(string cmd, List<string> args, bool isBuiltin)>>();
+                var currentSegment = new List<(string, List<string>, bool)>();
 
                 for (int i = 0; i < commands.Count; i++)
                 {
                     var (cmd, args) = commands[i];
                     var builtin = commandRegistry.Get(cmd);
-                    var isLastCommand = i == commands.Count - 1;
 
                     if (builtin != null)
                     {
-                        inputForNext = ExecuteBuiltinInPipeline(
-                            builtin,
-                            args,
-                            inputForNext,
-                            isLastCommand
+                        if (currentSegment.Count > 0)
+                        {
+                            segments.Add(currentSegment);
+                            currentSegment = new();
+                        }
+                        // add a segment containing only the builtin command
+                        segments.Add(new List<(string, List<string>, bool)> { (cmd, args, true) });
+                    }
+                    else
+                    {
+                        currentSegment.Add((cmd, args, false));
+                    }
+                }
+
+                if (currentSegment.Count > 0)
+                {
+                    segments.Add(currentSegment);
+                }
+
+                string? inputForNextSegment = null;
+                for (int i = 0; i < segments.Count; i++)
+                {
+                    var segment = segments[i];
+                    var isLastSegment = i == segments.Count - 1;
+
+                    if (segment.Count == 1 && segment[0].isBuiltin)
+                    {
+                        var builtin = commandRegistry.Get(segment[0].cmd);
+                        inputForNextSegment = ExecuteBuiltinInPipeline(
+                            builtin!, // sure from above check
+                            segment[0].args,
+                            inputForNextSegment,
+                            isLastSegment
                         );
                     }
                     else
                     {
-                        inputForNext = ExecuteExternalInPipeline(
-                            cmd,
-                            args,
-                            inputForNext,
-                            isLastCommand
+                        inputForNextSegment = ExecuteExternalSegment(
+                            segment,
+                            inputForNextSegment,
+                            isLastSegment
                         );
                     }
                 }
@@ -94,6 +121,118 @@ namespace MyShell.Core
             catch (Exception ex)
             {
                 Console.WriteLine($"Error executing pipeline: {ex.Message}");
+            }
+        }
+
+        private string? ExecuteExternalSegment(
+            List<(string cmd, List<string> args, bool isBuiltin)> segment,
+            string? input,
+            bool isLastSegment
+        )
+        {
+            var processes = new List<Process>();
+            var redirectionOptions = segment.Select(s => RedirectionOptions.Parse(s.args)).ToList();
+
+            for (int i = 0; i < segment.Count; i++)
+            {
+                var (cmd, args, _) = segment[i];
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = cmd,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        RedirectStandardInput = true,
+                        UseShellExecute = false,
+                    },
+                };
+
+                var filteredArgs = redirectionOptions[i].GetFilteredArgs(args);
+                foreach (var arg in filteredArgs)
+                {
+                    process.StartInfo.ArgumentList.Add(arg);
+                }
+
+                processes.Add(process);
+            }
+
+            var lastProcess = processes[^1];
+            RedirectionHandler? redirectionHandler = null;
+
+            if (isLastSegment)
+            {
+                redirectionHandler = new RedirectionHandler(redirectionOptions[^1]);
+                redirectionHandler.AttachToProcess(lastProcess);
+            }
+
+            foreach (var process in processes)
+            {
+                process.Start();
+            }
+
+            if (isLastSegment)
+            {
+                lastProcess.BeginOutputReadLine();
+                lastProcess.BeginErrorReadLine();
+            }
+
+            // connect the pipeline, copy outputs to inputs
+            var copyTasks = new List<Task>();
+
+            for (int i = 0; i < processes.Count - 1; i++)
+            {
+                var currentProcess = processes[i];
+                var nextProcess = processes[i + 1];
+
+                var copyTask = currentProcess.StandardOutput.BaseStream.CopyToAsync(
+                    nextProcess.StandardInput.BaseStream
+                );
+                copyTasks.Add(copyTask);
+
+                var processIndex = i;
+                Task.Run(() =>
+                {
+                    string? line;
+                    while ((line = currentProcess.StandardError.ReadLine()) != null)
+                    {
+                        Console.Error.WriteLine(line);
+                    }
+                });
+            }
+
+            if (input != null)
+            {
+                processes[0].StandardInput.Write(input);
+            }
+            processes[0].StandardInput.Close();
+
+            for (int i = 0; i < processes.Count - 1; i++)
+            {
+                processes[i].WaitForExit();
+                copyTasks[i].Wait();
+                processes[i + 1].StandardInput.Close();
+            }
+
+            if (isLastSegment)
+            {
+                lastProcess.WaitForExit();
+                redirectionHandler?.WriteRedirectedOutput();
+                return null;
+            }
+            else
+            {
+                var output = lastProcess.StandardOutput.ReadToEnd();
+                var errorOutput = lastProcess.StandardError.ReadToEnd();
+
+                lastProcess.WaitForExit();
+
+                if (!string.IsNullOrEmpty(errorOutput))
+                {
+                    Console.Error.Write(errorOutput);
+                }
+
+                return output;
             }
         }
 
@@ -136,80 +275,6 @@ namespace MyShell.Core
                 }
 
                 return outputWriter.ToString();
-            }
-        }
-
-        private string? ExecuteExternalInPipeline(
-            string command,
-            List<string> args,
-            string? input,
-            bool isLastCommand
-        )
-        {
-            var redirectionOptions = RedirectionOptions.Parse(args);
-
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = command,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true,
-                    UseShellExecute = false,
-                },
-            };
-
-            var filteredArgs = redirectionOptions.GetFilteredArgs(args);
-            foreach (var arg in filteredArgs)
-            {
-                process.StartInfo.ArgumentList.Add(arg);
-            }
-
-            if (isLastCommand)
-            {
-                var redirectionHandler = new RedirectionHandler(redirectionOptions);
-                redirectionHandler.AttachToProcess(process);
-
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-
-                // write input to process if we have it
-                if (input != null)
-                {
-                    process.StandardInput.Write(input);
-                }
-                process.StandardInput.Close();
-
-                process.WaitForExit();
-                redirectionHandler.WriteRedirectedOutput();
-
-                return null;
-            }
-            else
-            {
-                process.Start();
-
-                // write input to process if we have it
-                if (input != null)
-                {
-                    process.StandardInput.Write(input);
-                }
-                process.StandardInput.Close();
-
-                // capture output
-                var output = process.StandardOutput.ReadToEnd();
-                var errorOutput = process.StandardError.ReadToEnd();
-
-                process.WaitForExit();
-
-                if (!string.IsNullOrEmpty(errorOutput))
-                {
-                    Console.Error.Write(errorOutput);
-                }
-
-                return output;
             }
         }
     }
