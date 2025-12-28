@@ -55,52 +55,22 @@ namespace MyShell.Core
 
         private void ExecutePipeline(List<(string command, List<string> args)> commands)
         {
-            // for now only handle pipelines of exactly 2 commands
-            if (commands.Count == 2)
+            // Validate all commands exist before executing
+            for (int i = 0; i < commands.Count; i++)
             {
-                var (cmd1, args1) = commands[0];
-                var (cmd2, args2) = commands[1];
+                var (cmd, _) = commands[i];
+                var builtin = _commandRegistry.Get(cmd);
+                var external = _executableFinder.FindExecutable(cmd);
 
-                var builtin1 = _commandRegistry.Get(cmd1);
-                var builtin2 = _commandRegistry.Get(cmd2);
-                var external1 = _executableFinder.FindExecutable(cmd1);
-                var external2 = _executableFinder.FindExecutable(cmd2);
-
-                if (external1 != null && external2 != null)
+                if (builtin == null && external == null)
                 {
-                    _processExecutor.ExecuteExternalToExternal(cmd1, args1, cmd2, args2);
-                    return;
-                }
-
-                if (builtin1 != null && external2 != null)
-                {
-                    _processExecutor.ExecuteBuiltinToExternal(builtin1, args1, cmd2, args2);
-                    return;
-                }
-
-                if (external1 != null && builtin2 != null)
-                {
-                    _processExecutor.ExecuteExternalToBuiltin(cmd1, args1, builtin2, args2);
-                    return;
-                }
-
-                if (builtin1 != null && builtin2 != null)
-                {
-                    _processExecutor.ExecuteBuiltinToBuiltin(builtin1, args1, builtin2, args2);
-                    return;
-                }
-
-                if (builtin1 == null && external1 == null)
-                {
-                    Console.WriteLine($"{cmd1}: command not found");
-                    return;
-                }
-                if (builtin2 == null && external2 == null)
-                {
-                    Console.WriteLine($"{cmd2}: command not found");
+                    Console.WriteLine($"{cmd}: command not found");
                     return;
                 }
             }
+
+            // Execute the pipeline
+            _processExecutor.ExecutePipeline(commands, _commandRegistry);
         }
 
         private void ExecuteCommand(string command, List<string> args)
