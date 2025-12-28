@@ -43,7 +43,11 @@ namespace MyShell.Core
 
             if (_options.AppendError)
             {
-                FileWriter.Write(_errorBuilder.ToString().TrimEnd(), _options.TargetFile!, append: true);
+                FileWriter.Write(
+                    _errorBuilder.ToString().TrimEnd(),
+                    _options.TargetFile!,
+                    append: true
+                );
             }
         }
 

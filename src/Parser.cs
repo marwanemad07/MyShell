@@ -2,18 +2,27 @@ namespace MyShell.Core
 {
     public static class Parser
     {
-        public static (string command, List<string> args) ParseInput(string input)
+        public static List<(string command, List<string> args)> ParseInput(string input)
         {
-            var processedInput = ProcessInput(input);
+            // TODO: this is a simplified parser; it does not handle all edge cases
+            // such as escaped pipes or quotes within commands.
+            var segments = input.Split('|');
 
-            var command = processedInput.Count > 0 ? processedInput[0] : string.Empty;
-            var argsList = processedInput.Count > 1 ? processedInput.Skip(1).ToList() : [];
+            var result = new List<(string, List<string>)>();
 
-            return (command, argsList);
+            foreach (var segment in segments)
+            {
+                var args = ProcessInput(segment);
+                var command = args.Count > 0 ? args[0] : string.Empty;
+                var commandArgs = args.Count > 1 ? args.Skip(1).ToList() : [];
+                result.Add((command, commandArgs));
+            }
+            return result;
         }
 
         private static List<string> ProcessInput(string input)
         {
+            input = input.Trim();
             var inSingleQuotes = false;
             var inDoubleQuotes = false;
             var escaped = false;

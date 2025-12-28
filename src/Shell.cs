@@ -22,7 +22,7 @@ namespace MyShell.Core
             while (true)
             {
                 Console.Write("$ ");
-                var input = ReadLineWithAutocompletion();
+                var input = Console.ReadLine(); //ReadLineWithAutocompletion();
                 if (string.IsNullOrEmpty(input))
                     continue;
                 ExecuteInput(input);
@@ -40,7 +40,43 @@ namespace MyShell.Core
 
         private void ExecuteInput(string input)
         {
-            var (command, args) = Parser.ParseInput(input);
+            var inputs = Parser.ParseInput(input);
+
+            if (inputs.Count > 1)
+            {
+                ExecutePipeline(inputs);
+            }
+            else
+            {
+                var (command, args) = inputs[0];
+                ExecuteCommand(command, args);
+            }
+        }
+
+        private void ExecutePipeline(List<(string command, List<string> args)> commands)
+        {
+            // for now only handle pipelines of exactly 2 external commands
+            if (commands.Count == 2)
+            {
+                var (cmd1, args1) = commands[0];
+                var (cmd2, args2) = commands[1];
+
+                bool doCommand1Exist = _executableFinder.FindExecutable(cmd1) != null;
+                bool doCommand2Exist = _executableFinder.FindExecutable(cmd2) != null;
+                Console.WriteLine(
+                    $"Debug: cmd1 exist: {doCommand1Exist}, cmd2 exist: {doCommand2Exist}"
+                );
+
+                if (doCommand1Exist && doCommand2Exist)
+                {
+                    _processExecutor.ExecutePipeline(cmd1, args1, cmd2, args2);
+                    return;
+                }
+            }
+        }
+
+        private void ExecuteCommand(string command, List<string> args)
+        {
             var commandInstance = _commandRegistry.Get(command);
 
             if (commandInstance == null)
@@ -133,18 +169,19 @@ namespace MyShell.Core
             }
         }
 
-        private void HandleBackspaceKey(System.Text.StringBuilder buffer, ref int cursorPosition)
+        private void HandleBackspaceKey(StringBuilder buffer, ref int cursorPosition)
         {
             if (cursorPosition > 0)
             {
-                buffer.Remove(cursorPosition - 1, 1);
-                cursorPosition--;
+                buffer[cursorPosition - 1] = '\0';
                 RedrawLine(buffer, buffer.ToString(), ref cursorPosition);
+                cursorPosition--;
+                buffer.Remove(cursorPosition, 1);
             }
         }
 
         private void HandleCharacterInput(
-            System.Text.StringBuilder buffer,
+            StringBuilder buffer,
             ref int cursorPosition,
             char keyChar
         )
@@ -154,11 +191,7 @@ namespace MyShell.Core
             RedrawLine(buffer, buffer.ToString(), ref cursorPosition);
         }
 
-        private void RedrawLine(
-            System.Text.StringBuilder buffer,
-            string newContent,
-            ref int cursorPosition
-        )
+        private void RedrawLine(StringBuilder buffer, string newContent, ref int cursorPosition)
         {
             Console.Write("\r$ " + new string(' ', buffer.Length));
             buffer.Clear();
