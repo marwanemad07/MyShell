@@ -55,18 +55,49 @@ namespace MyShell.Core
 
         private void ExecutePipeline(List<(string command, List<string> args)> commands)
         {
-            // for now only handle pipelines of exactly 2 external commands
+            // for now only handle pipelines of exactly 2 commands
             if (commands.Count == 2)
             {
                 var (cmd1, args1) = commands[0];
                 var (cmd2, args2) = commands[1];
 
-                bool doCommand1Exist = _executableFinder.FindExecutable(cmd1) != null;
-                bool doCommand2Exist = _executableFinder.FindExecutable(cmd2) != null;
+                var builtin1 = _commandRegistry.Get(cmd1);
+                var builtin2 = _commandRegistry.Get(cmd2);
+                var external1 = _executableFinder.FindExecutable(cmd1);
+                var external2 = _executableFinder.FindExecutable(cmd2);
 
-                if (doCommand1Exist && doCommand2Exist)
+                if (external1 != null && external2 != null)
                 {
-                    _processExecutor.ExecutePipeline(cmd1, args1, cmd2, args2);
+                    _processExecutor.ExecuteExternalToExternal(cmd1, args1, cmd2, args2);
+                    return;
+                }
+
+                if (builtin1 != null && external2 != null)
+                {
+                    _processExecutor.ExecuteBuiltinToExternal(builtin1, args1, cmd2, args2);
+                    return;
+                }
+
+                if (external1 != null && builtin2 != null)
+                {
+                    _processExecutor.ExecuteExternalToBuiltin(cmd1, args1, builtin2, args2);
+                    return;
+                }
+
+                if (builtin1 != null && builtin2 != null)
+                {
+                    _processExecutor.ExecuteBuiltinToBuiltin(builtin1, args1, builtin2, args2);
+                    return;
+                }
+
+                if (builtin1 == null && external1 == null)
+                {
+                    Console.WriteLine($"{cmd1}: command not found");
+                    return;
+                }
+                if (builtin2 == null && external2 == null)
+                {
+                    Console.WriteLine($"{cmd2}: command not found");
                     return;
                 }
             }
@@ -91,6 +122,7 @@ namespace MyShell.Core
 
         // TODO: This method can be moved to Helper class
         // TODO: We will use trie data structure for better performance
+        // TODO: Consider writing the new chars only instead of redrawing the whole line
         private string? ReadLineWithAutocompletion()
         {
             var currentLineBuffer = new System.Text.StringBuilder();

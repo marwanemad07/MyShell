@@ -56,7 +56,7 @@ namespace MyShell.Core
             process.WaitForExit();
         }
 
-        public void ExecutePipeline(
+        public void ExecuteExternalToExternal(
             string command1,
             List<string> args1,
             string command2,
@@ -142,6 +142,158 @@ namespace MyShell.Core
 
                 // handle any redirected output from process2
                 redirectionHandler2.WriteRedirectedOutput();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error executing pipeline: {ex.Message}");
+            }
+        }
+
+        public void ExecuteBuiltinToExternal(
+            Commands.ICommand builtin,
+            List<string> args1,
+            string command2,
+            List<string> args2
+        )
+        {
+            try
+            {
+                var redirectionOptions2 = RedirectionOptions.Parse(args2);
+
+                // capture output from built-in command
+                var outputWriter = new StringWriter();
+                var originalOut = Console.Out;
+                Console.SetOut(outputWriter);
+
+                builtin.Execute(args1);
+
+                Console.SetOut(originalOut);
+                var builtinOutput = outputWriter.ToString();
+
+                // create process for second command
+                var process2 = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = command2,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        RedirectStandardInput = true,
+                        UseShellExecute = false,
+                    },
+                };
+
+                var filteredArgs2 = redirectionOptions2.GetFilteredArgs(args2);
+                foreach (var arg in filteredArgs2)
+                {
+                    process2.StartInfo.ArgumentList.Add(arg);
+                }
+
+                var redirectionHandler2 = new RedirectionHandler(redirectionOptions2);
+                redirectionHandler2.AttachToProcess(process2);
+
+                process2.Start();
+                process2.BeginOutputReadLine();
+                process2.BeginErrorReadLine();
+
+                // write built-in output to process2's stdin
+                var writer = process2.StandardInput;
+                writer.Write(builtinOutput);
+                writer.Close();
+
+                process2.WaitForExit();
+                redirectionHandler2.WriteRedirectedOutput();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error executing pipeline: {ex.Message}");
+            }
+        }
+
+        public void ExecuteExternalToBuiltin(
+            string command1,
+            List<string> args1,
+            Commands.ICommand builtin,
+            List<string> args2
+        )
+        {
+            try
+            {
+                var redirectionOptions1 = RedirectionOptions.Parse(args1);
+
+                // create process for first command
+                var process1 = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = command1,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        RedirectStandardInput = true,
+                        UseShellExecute = false,
+                    },
+                };
+
+                var filteredArgs1 = redirectionOptions1.GetFilteredArgs(args1);
+                foreach (var arg in filteredArgs1)
+                {
+                    process1.StartInfo.ArgumentList.Add(arg);
+                }
+
+                process1.Start();
+                process1.StandardInput.Close();
+
+                // capture output from process1
+                var output = process1.StandardOutput.ReadToEnd();
+                var errorOutput = process1.StandardError.ReadToEnd();
+
+                process1.WaitForExit();
+
+                if (!string.IsNullOrEmpty(errorOutput))
+                {
+                    Console.Error.Write(errorOutput);
+                }
+
+                // redirect stdin for built-in command
+                var originalIn = Console.In;
+                Console.SetIn(new StringReader(output));
+
+                builtin.Execute(args2);
+
+                Console.SetIn(originalIn);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error executing pipeline: {ex.Message}");
+            }
+        }
+
+        public void ExecuteBuiltinToBuiltin(
+            Commands.ICommand builtin1,
+            List<string> args1,
+            Commands.ICommand builtin2,
+            List<string> args2
+        )
+        {
+            try
+            {
+                // capture output from first built-in
+                var outputWriter = new StringWriter();
+                var originalOut = Console.Out;
+                Console.SetOut(outputWriter);
+
+                builtin1.Execute(args1);
+
+                Console.SetOut(originalOut);
+                var output = outputWriter.ToString();
+
+                // redirect stdin for second built-in
+                var originalIn = Console.In;
+                Console.SetIn(new StringReader(output));
+
+                builtin2.Execute(args2);
+
+                Console.SetIn(originalIn);
             }
             catch (Exception ex)
             {
