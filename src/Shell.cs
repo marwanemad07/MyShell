@@ -92,7 +92,6 @@ namespace MyShell.Core
 
         // TODO: This method can be moved to Helper class
         // TODO: We will use trie data structure for better performance
-        // TODO: Consider writing the new chars only instead of redrawing the whole line
         private string? ReadLineWithAutocompletion()
         {
             var currentLineBuffer = new System.Text.StringBuilder();
@@ -137,7 +136,8 @@ namespace MyShell.Core
             {
                 if (completions.Count == 1)
                 {
-                    RedrawLine(buffer, completions[0] + " ", ref cursorPosition);
+                    // TODO: here we can hanlde it by adding the remaining part only that differs from current input
+                    ReplaceLineContent(buffer, completions[0] + " ", ref cursorPosition);
                     tabPressedOnce = true;
                 }
                 else if (completions.Count > 1)
@@ -145,7 +145,8 @@ namespace MyShell.Core
                     var lcp = StringUtilities.GetLongestCommonPrefix(completions);
                     if (lcp.Length > currentInput.Length)
                     {
-                        RedrawLine(buffer, lcp, ref cursorPosition);
+                        // TODO: here we can hanlde it by adding the remaining part only that differs from current input
+                        ReplaceLineContent(buffer, lcp, ref cursorPosition);
                         tabPressedOnce = true;
                     }
                     else if (tabPressedOnce)
@@ -172,10 +173,10 @@ namespace MyShell.Core
         {
             if (cursorPosition > 0)
             {
-                buffer[cursorPosition - 1] = '\0';
-                RedrawLine(buffer, buffer.ToString(), ref cursorPosition);
+                buffer.Remove(cursorPosition - 1, 1);
                 cursorPosition--;
-                buffer.Remove(cursorPosition, 1);
+                // move cursor back, overwrite the character, and move cursor back again
+                Console.Write("\b \b");
             }
         }
 
@@ -185,12 +186,16 @@ namespace MyShell.Core
             char keyChar
         )
         {
-            buffer.Insert(cursorPosition, keyChar);
+            buffer.Append(keyChar);
             cursorPosition++;
-            RedrawLine(buffer, buffer.ToString(), ref cursorPosition);
+            Console.Write(keyChar);
         }
 
-        private void RedrawLine(StringBuilder buffer, string newContent, ref int cursorPosition)
+        private void ReplaceLineContent(
+            StringBuilder buffer,
+            string newContent,
+            ref int cursorPosition
+        )
         {
             Console.Write("\r$ " + new string(' ', buffer.Length));
             buffer.Clear();
