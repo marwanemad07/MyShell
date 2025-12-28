@@ -63,9 +63,6 @@ namespace MyShell.Core
 
                 bool doCommand1Exist = _executableFinder.FindExecutable(cmd1) != null;
                 bool doCommand2Exist = _executableFinder.FindExecutable(cmd2) != null;
-                Console.WriteLine(
-                    $"Debug: cmd1 exist: {doCommand1Exist}, cmd2 exist: {doCommand2Exist}"
-                );
 
                 if (doCommand1Exist && doCommand2Exist)
                 {
