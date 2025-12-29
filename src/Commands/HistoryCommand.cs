@@ -8,7 +8,11 @@ namespace MyShell.Core.Commands
 
         public int Execute(List<string> args)
         {
-            for (int i = 0; i < History.Count; i++)
+            int n =
+                args.Count > 0 && int.TryParse(args[0], out var parsedN) ? parsedN : History.Count;
+            n = Math.Min(n, History.Count);
+
+            for (int i = History.Count - n; i < History.Count; i++)
             {
                 Console.WriteLine($"{i + 1, 4}  {History[i]}");
             }
