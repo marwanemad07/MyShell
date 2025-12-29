@@ -4,9 +4,16 @@ namespace MyShell.Core.Commands
     {
         public string Name => "history";
 
+        public readonly List<string> History = new List<string>();
+
         public int Execute(List<string> args)
         {
-            throw new NotImplementedException();
+            for (int i = 0; i < History.Count; i++)
+            {
+                Console.WriteLine($"{i + 1, 4}  {History[i]}");
+            }
+
+            return 0;
         }
     }
 }

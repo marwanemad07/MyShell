@@ -105,6 +105,12 @@ namespace MyShell.Core
                 if (key.Key == ConsoleKey.Enter)
                 {
                     Console.WriteLine();
+
+                    if (_commandRegistry.Get("history") is HistoryCommand historyCmd)
+                    {
+                        historyCmd.History.Add(currentLineBuffer.ToString());
+                    }
+
                     return currentLineBuffer.ToString();
                 }
                 else if (key.Key == ConsoleKey.Tab)
