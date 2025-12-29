@@ -19,6 +19,11 @@ namespace MyShell.Core
 
         public void Run()
         {
+            if (_commandRegistry.Get("history") is HistoryCommand historyCmd)
+            {
+                historyCmd.LoadHistoryFromFile();
+            }
+
             while (true)
             {
                 Console.Write("$ ");

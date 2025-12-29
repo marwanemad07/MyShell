@@ -25,6 +25,24 @@ namespace MyShell.Core.Commands
             };
         }
 
+        public void LoadHistoryFromFile()
+        {
+            var histFile = Environment.GetEnvironmentVariable("HISTFILE");
+            if (string.IsNullOrEmpty(histFile) || !File.Exists(histFile))
+            {
+                return;
+            }
+
+            var lines = File.ReadAllLines(histFile);
+            foreach (var line in lines)
+            {
+                if (!string.IsNullOrEmpty(line))
+                {
+                    History.Add(line);
+                }
+            }
+        }
+
         private int HandleReadOption(List<string> args)
         {
             if (args.Count < 2)
