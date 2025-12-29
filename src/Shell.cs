@@ -95,9 +95,15 @@ namespace MyShell.Core
         // TODO: We will use trie data structure for better performance
         private string? ReadLineWithAutocompletion()
         {
-            var currentLineBuffer = new System.Text.StringBuilder();
+            var currentLineBuffer = new StringBuilder();
             int cursorPosition = 0;
             bool tabPressedOnce = true;
+            int historyIndex = -1;
+            List<string>? history = null;
+            if (_commandRegistry.Get("history") is HistoryCommand historyCmd)
+            {
+                history = historyCmd.History;
+            }
 
             while (true)
             {
@@ -105,12 +111,10 @@ namespace MyShell.Core
                 if (key.Key == ConsoleKey.Enter)
                 {
                     Console.WriteLine();
-
-                    if (_commandRegistry.Get("history") is HistoryCommand historyCmd)
+                    if (history != null && currentLineBuffer.Length > 0)
                     {
-                        historyCmd.History.Add(currentLineBuffer.ToString());
+                        history.Add(currentLineBuffer.ToString());
                     }
-
                     return currentLineBuffer.ToString();
                 }
                 else if (key.Key == ConsoleKey.Tab)
@@ -122,10 +126,31 @@ namespace MyShell.Core
                     HandleBackspaceKey(currentLineBuffer, ref cursorPosition);
                     tabPressedOnce = true;
                 }
+                else if (key.Key == ConsoleKey.UpArrow && history != null)
+                {
+                    HandleUpArrowKey(
+                        currentLineBuffer,
+                        ref cursorPosition,
+                        ref historyIndex,
+                        history
+                    );
+                    tabPressedOnce = true;
+                }
+                else if (key.Key == ConsoleKey.DownArrow && history != null)
+                {
+                    HandleDownArrowKey(
+                        currentLineBuffer,
+                        ref cursorPosition,
+                        ref historyIndex,
+                        history
+                    );
+                    tabPressedOnce = true;
+                }
                 else
                 {
                     HandleCharacterInput(currentLineBuffer, ref cursorPosition, key.KeyChar);
                     tabPressedOnce = true;
+                    historyIndex = -1;
                 }
             }
         }
@@ -196,6 +221,44 @@ namespace MyShell.Core
             buffer.Append(keyChar);
             cursorPosition++;
             Console.Write(keyChar);
+        }
+
+        private void HandleUpArrowKey(
+            StringBuilder buffer,
+            ref int cursorPosition,
+            ref int historyIndex,
+            List<string> history
+        )
+        {
+            if (historyIndex == -1)
+            {
+                historyIndex = history.Count - 1;
+            }
+            else if (historyIndex > 0)
+            {
+                historyIndex--;
+            }
+
+            ReplaceLineContent(buffer, history[historyIndex], ref cursorPosition);
+        }
+
+        private void HandleDownArrowKey(
+            StringBuilder buffer,
+            ref int cursorPosition,
+            ref int historyIndex,
+            List<string> history
+        )
+        {
+            if (historyIndex != -1 && historyIndex < history.Count - 1)
+            {
+                historyIndex++;
+                ReplaceLineContent(buffer, history[historyIndex], ref cursorPosition);
+            }
+            else if (historyIndex == history.Count - 1)
+            {
+                historyIndex = -1;
+                ReplaceLineContent(buffer, string.Empty, ref cursorPosition);
+            }
         }
 
         private void ReplaceLineContent(
