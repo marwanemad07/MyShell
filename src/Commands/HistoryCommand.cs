@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace MyShell.Core.Commands
 {
     public class HistoryCommand : ICommand
@@ -5,6 +7,7 @@ namespace MyShell.Core.Commands
         public string Name => "history";
 
         public readonly List<string> History = new List<string>();
+        private int _lastPersistedIndex = 0;
 
         public int Execute(List<string> args)
         {
@@ -17,6 +20,7 @@ namespace MyShell.Core.Commands
             {
                 "-r" => HandleReadOption(args),
                 "-w" => HandleWriteOption(args),
+                "-a" => HandleAppendOption(args),
                 _ => HandlePrintWithLimit(args[0]),
             };
         }
@@ -53,6 +57,7 @@ namespace MyShell.Core.Commands
                 return 1;
             }
 
+            _lastPersistedIndex = History.Count;
             return 0;
         }
 
@@ -76,6 +81,36 @@ namespace MyShell.Core.Commands
                 return 1;
             }
 
+            _lastPersistedIndex = History.Count;
+            return 0;
+        }
+
+        private int HandleAppendOption(List<string> args)
+        {
+            if (args.Count < 2)
+            {
+                Console.WriteLine("history: option requires an argument");
+                return 1;
+            }
+
+            var entriesToAppend = History.Count - _lastPersistedIndex;
+            if (entriesToAppend <= 0)
+                return 0;
+
+            var filePath = args[1];
+            try
+            {
+                var slice = History.Skip(_lastPersistedIndex).Take(entriesToAppend).ToList();
+                var content = string.Join(Environment.NewLine, slice) + Environment.NewLine;
+                File.AppendAllText(filePath, content);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"history: {ex.Message}");
+                return 1;
+            }
+
+            _lastPersistedIndex = History.Count;
             return 0;
         }
 
