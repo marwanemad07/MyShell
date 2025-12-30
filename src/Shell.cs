@@ -36,12 +36,16 @@ namespace MyShell.Core
 
         private void RegisterBuiltinCommands()
         {
+            var historyCommand = new HistoryCommand();
+
             _commandRegistry.RegisterCommand(new EchoCommand());
-            _commandRegistry.RegisterCommand(new ExitCommand());
+            // Instead of sending the _commandRegistry to ExitCommand, we send the HistoryCommand instance
+            // TODO: We should do this for TypeCommand as well
+            _commandRegistry.RegisterCommand(new ExitCommand(historyCommand));
             _commandRegistry.RegisterCommand(new TypeCommand(_commandRegistry));
             _commandRegistry.RegisterCommand(new PwdCommand());
             _commandRegistry.RegisterCommand(new CdCommand());
-            _commandRegistry.RegisterCommand(new HistoryCommand());
+            _commandRegistry.RegisterCommand(historyCommand);
         }
 
         private void ExecuteInput(string input)
